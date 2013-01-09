@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'commander/import'
+require 'soggle'
+
+program :version, Soggle::VERSION
+program :description, 'Soggle looks for words on a Boggle-style grid.'
+
+default_command :'enter grid'
+
+command :'enter grid' do |c|
+  c.syntax = 'soggle enter grid [options]'
+  c.summary = 'Interactively enter a grid of letters to search for solutions'
+  c.description = ''
+  c.example 'search a standard size grid', 'soggle enter grid'
+  c.example 'search a grid with three rows', 'soggle enter grid --grid-size 3'
+  c.option '--grid_size SIZE', Integer, 'set the number of rows in the grid'
+  c.option '--max_length LENGTH', Integer, 'set the maximum lenth of words to search for'
+  c.action do |args, options|
+    options.default grid_size: 4, max_length: 7
+    board=[]
+    puts "Enter letters on grid. Q\'s become Qu automatically. Grid size is #{options.grid_size} rows"
+    options.grid_size.times do |i|
+      board << ask("Enter row #{i+1}")
+    end
+    puts "Searching..."
+    Soggle::Board.new(board).find_words(max_length:options.max_length).sort{|x,y|x.length<=>y.length}.each_slice(3) do |words|
+      puts( ("%-12.12s"*words.length)%words )
+    end
+  end
+end
+
+command :solve do |c|
+  c.syntax = 'soggle solve [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |args, options|
+    # Do something or c.when_called Soggle::Commands::Solve
+  end
+end
+
