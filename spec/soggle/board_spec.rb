@@ -69,15 +69,16 @@ describe Soggle::Board do
         context "at coordinates #{i},#{j}" do
           let(:y){j}; let(:x){i}
           subject{Soggle::Board.new(board).fetch(x,y)}
-          it{should eq(board[j][i]), "#{x},#{y}"}
+          it{should eq(board[j][i])}
         end
       end
     end
   end
   describe "#adjacent_coordinates_of" do
-    board=%w[ abc
-              def
-              ghi]
+    board=%w[ abcd
+              efgh
+              ijkl
+              mnop ]
     subject{Soggle::Board.new(board).adjacent_coordinates_of(x,y)}
     context "when coordinates 0,0" do
       let(:x){0};let(:y){0}
@@ -91,9 +92,9 @@ describe Soggle::Board do
       let(:x){1};let(:y){1}
       it{should =~ [[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]]}
     end
-    context "when coordinates 2,2" do
-      let(:x){2};let(:y){2}
-      it{should =~ [[1,1],[2,1],[1,2]]}
+    context "when coordinates 3,3" do
+      let(:x){3};let(:y){3}
+      it{should =~ [[2,2],[3,2],[2,3]]}
     end
   end
   describe "#adjacents_hash" do
@@ -107,32 +108,57 @@ describe Soggle::Board do
     end
   end
   describe "#paths_from" do
-    board=%w[ ab
-              cd ]
-    subject{Soggle::Board.new(board).paths_from(0,0,max_length:max,ignore:ign)}
-    context "when ignore:[]" do
-      let(:ign){[]}
-      context "when max_length:1" do
-        let(:max){1}
-        it{should =~ [[[0,0]]]}
+    context "2x2 board" do
+      board=%w[ ab
+                cd ]
+      subject{Soggle::Board.new(board).paths_from(0,0,max_length:max,ignore:ign)}
+      context "when ignore:[]" do
+        let(:ign){[]}
+        context "when max_length:1" do
+          let(:max){1}
+          it{should =~ [[[0,0]]]}
+        end
+        context "when max_length:2" do
+          let(:max){2}
+          it{should =~ [ [[0,0],[0,1]], [[0,0],[1,0]], [[0,0],[1,1]], ]}
+        end
+        context "when max_length:3" do
+          let(:max){3}
+          it{should =~ [ [[0,0],[0,1],[1,0]], [[0,0],[0,1],[1,1]], [[0,0],[1,0],[0,1]], [[0,0],[1,0],[1,1]], [[0,0],[1,1],[0,1]], [[0,0],[1,1],[1,0]], ]}
+        end
       end
-      context "when max_length:2" do
-        let(:max){2}
-        it{should =~ [ [[0,0],[0,1]], [[0,0],[1,0]], [[0,0],[1,1]], ]}
-      end
-      context "when max_length:3" do
-        let(:max){3}
-        it{should =~ [ [[0,0],[0,1],[1,0]], [[0,0],[0,1],[1,1]], [[0,0],[1,0],[0,1]], [[0,0],[1,0],[1,1]], [[0,0],[1,1],[0,1]], [[0,0],[1,1],[1,0]], ]}
+      context "when ignore:[[1,1]]" do
+        let(:ign){[[1,1]]}
+        context "when max_length:2" do
+          let(:max){2}
+          it{should =~ [ [[0,0],[0,1]], [[0,0],[1,0]], ]}
+        end
       end
     end
-    context "when ignore:[[1,1]]" do
-      let(:ign){[[1,1]]}
-      context "when max_length:2" do
-        let(:max){2}
-        it{should =~ [ [[0,0],[0,1]], [[0,0],[1,0]], ]}
-      end
-    end
+    context "4x4 board", :slow do
+      board=%w[ abcd
+                efgh
+                ijkl
+                mnop ]
+      subject{Soggle::Board.new(board).paths_from(0,0,max_length:max)}
+      context "when max_length:16" do
+          let(:max){16}
+          test_array=(0..3).to_a.product((0..3).to_a)
+          test_array.sort! do |a,b|
+            unless a.first==b.first then
+              a.first<=>b.first
+            else
+              if b.first.even? then
+                a.last<=>b.last
+              else
+                b.last<=>a.last
+              end
+            end
+          end
 
+          it{should include(test_array), subject.length.to_s}
+        end
+    end
   end
   describe "#longest_strings_from" do
     board=%w[ ab
@@ -141,9 +167,21 @@ describe Soggle::Board do
     it {should =~ %w[abcd abdc acdb acbd adcb adbc]}
   end
   describe "#all_strings_from" do
-    board="abcd"
-    subject{Soggle::Board.new(board).all_strings_from(0,0)}
-    it {should =~ %w[a ab abc abcd]}
+    context "small board" do
+      board="abcd"
+      subject{Soggle::Board.new(board).all_strings_from(0,0)}
+      it {should =~ %w[a ab abc abcd]}
+    end
+    context "large board", :slow do
+      board=%w[
+                xxxx
+                xabx
+                xcdx
+                xxxx
+              ]
+      subject{Soggle::Board.new(board).all_strings_from(1,1)}
+      it {should include 'abcd'}
+    end
   end
   describe "#all_strings" do
     board="abcd"
@@ -154,5 +192,18 @@ describe Soggle::Board do
     board="abigcatqit"
     subject{Soggle::Board.new(board).find_words}
     it {should =~ %w[ta ab bi big cat quit at it ti]}
+  end
+  describe "#all_words_from" do
+    board=%w[
+              abig
+              catq
+              etis
+              your
+            ]
+    subject{Soggle::Board.new(board).all_words_from(x,y)}
+    context "0,0" do
+      let(:x){0};let(:y){0}
+      it {should include(*%w[ace ab])}
+    end
   end
 end
